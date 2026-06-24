@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -11,6 +12,7 @@ enum class PixelFormat {
     unknown,
     bgr8,
     rgb8,
+    bgra8,
     nv12,
 };
 

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "npu_vtube/capture/capture_service.hpp"
@@ -29,14 +30,34 @@ int main() {
     const auto observation = inference_service.make_placeholder_observation();
     const auto tracking_state = tracking_service.update(observation);
     const auto mapped = parameter_mapper.map(tracking_state);
+    const auto capture_devices = capture_service.list_devices();
 
     std::cout << app_info.name << " v" << app_info.version << '\n';
     std::cout << "Capture stage: " << capture_service.describe() << '\n';
+    std::cout << "Detected cameras: " << capture_devices.size() << '\n';
+    for (std::size_t i = 0; i < capture_devices.size(); ++i) {
+        std::cout << "  [" << i << "] " << capture_devices[i].name << '\n';
+    }
     std::cout << "Inference device: " << device << '\n';
     std::cout << "Render backend: " << render_backend.name() << '\n';
     std::cout << "UI backend: " << debug_ui.name() << '\n';
     std::cout << "Mapped yaw/pitch/roll: " << mapped.angle_yaw << ", " << mapped.angle_pitch << ", "
               << mapped.angle_roll << '\n';
+
+    if (!capture_devices.empty()) {
+        std::string capture_error;
+        npuvt::capture::CaptureOptions capture_options;
+        capture_options.device_index = 0;
+
+        if (capture_service.initialize(capture_options, &capture_error)) {
+            const auto frame = capture_service.grab_frame(&capture_error);
+            std::cout << "Captured frame: " << frame.width << "x" << frame.height << ", bytes="
+                      << frame.image.bytes.size() << '\n';
+            capture_service.shutdown();
+        } else {
+            std::cout << "Capture initialization failed: " << capture_error << '\n';
+        }
+    }
 
     return 0;
 }

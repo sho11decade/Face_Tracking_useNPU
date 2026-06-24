@@ -5,3 +5,5 @@ out/
 CMakeUserPresets.json
 CMakeCache.txt
 compile_commands.json
+/build-doc-check
+/build-doc-check-mingw
