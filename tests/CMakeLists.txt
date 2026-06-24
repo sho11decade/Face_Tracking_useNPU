@@ -4,6 +4,7 @@ target_link_libraries(
     npuvt_smoke_test
     PRIVATE
         npuvt_project_options
+        npuvt::capture
         npuvt::inference
         npuvt::tracking
         npuvt::mapping

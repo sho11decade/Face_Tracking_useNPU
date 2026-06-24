@@ -44,6 +44,8 @@ struct FramePacket {
 struct FaceObservation {
     std::uint64_t frame_id {};
     std::chrono::steady_clock::time_point timestamp {};
+    int frame_width {};
+    int frame_height {};
     bool detected {};
     Rect2f face_bbox {};
     std::vector<Vec2f> landmarks;
@@ -56,12 +58,15 @@ struct FaceObservation {
 struct TrackingState {
     std::uint64_t frame_id {};
     std::chrono::steady_clock::time_point timestamp {};
+    int frame_width {};
+    int frame_height {};
     bool valid {};
     Vec2f face_center {};
     float face_scale {};
     float yaw {};
     float pitch {};
     float roll {};
+    float confidence {};
 };
 
 struct MappedParameters {

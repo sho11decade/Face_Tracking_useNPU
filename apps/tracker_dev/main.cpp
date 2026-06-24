@@ -27,8 +27,8 @@ int main() {
     }
 
     const auto device = inference_service.select_device(available_devices);
-    const auto observation = inference_service.make_placeholder_observation();
-    const auto tracking_state = tracking_service.update(observation);
+    const auto placeholder_observation = inference_service.make_placeholder_observation();
+    const auto tracking_state = tracking_service.update(placeholder_observation);
     const auto mapped = parameter_mapper.map(tracking_state);
     const auto capture_devices = capture_service.list_devices();
 
@@ -44,6 +44,9 @@ int main() {
     std::cout << "Mapped yaw/pitch/roll: " << mapped.angle_yaw << ", " << mapped.angle_pitch << ", "
               << mapped.angle_roll << '\n';
 
+    render_backend.submit({.frame = capture_service.make_placeholder_frame(), .tracking_state = tracking_state, .mapped_parameters = mapped});
+    debug_ui.submit(render_backend.last_frame_info());
+
     if (!capture_devices.empty()) {
         std::string capture_error;
         npuvt::capture::CaptureOptions capture_options;
@@ -53,6 +56,13 @@ int main() {
             const auto frame = capture_service.grab_frame(&capture_error);
             std::cout << "Captured frame: " << frame.width << "x" << frame.height << ", bytes="
                       << frame.image.bytes.size() << '\n';
+            const auto live_observation = inference_service.analyze(frame);
+            const auto live_tracking_state = tracking_service.update(live_observation);
+            const auto live_mapped = parameter_mapper.map(live_tracking_state);
+            std::cout << "Live head position: " << live_mapped.head_x << ", " << live_mapped.head_y << ", "
+                      << live_mapped.head_z << '\n';
+            render_backend.submit({.frame = frame, .tracking_state = live_tracking_state, .mapped_parameters = live_mapped});
+            debug_ui.submit(render_backend.last_frame_info());
             capture_service.shutdown();
         } else {
             std::cout << "Capture initialization failed: " << capture_error << '\n';
