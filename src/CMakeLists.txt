@@ -1,0 +1,8 @@
+add_subdirectory(core)
+add_subdirectory(capture)
+add_subdirectory(inference)
+add_subdirectory(tracking)
+add_subdirectory(mapping)
+add_subdirectory(render)
+add_subdirectory(ui)
+add_subdirectory(platform)

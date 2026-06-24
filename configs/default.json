@@ -1,0 +1,22 @@
+{
+  "camera": {
+    "device_index": 0,
+    "width": 1280,
+    "height": 720
+  },
+  "inference": {
+    "preferred_devices": ["NPU", "GPU", "CPU"],
+    "performance_hint": "LATENCY"
+  },
+  "filter": {
+    "type": "OneEuro",
+    "min_cutoff": 1.0,
+    "beta": 0.05,
+    "derivative_cutoff": 1.0
+  },
+  "render": {
+    "backend": "DirectX11",
+    "show_landmarks": true,
+    "show_head_pose": true
+  }
+}

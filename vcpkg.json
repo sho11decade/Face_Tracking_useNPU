@@ -1,0 +1,13 @@
+{
+  "name": "npu-vtube",
+  "version-string": "0.1.0",
+  "description": "Real-time face tracking software for Intel AI Boost NPU.",
+  "dependencies": [
+    "fmt",
+    "imgui",
+    "nlohmann-json",
+    "opencv",
+    "openvino",
+    "tbb"
+  ]
+}

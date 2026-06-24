@@ -1,0 +1,5 @@
+add_library(npuvt_platform_windows STATIC environment.cpp)
+add_library(npuvt::platform_windows ALIAS npuvt_platform_windows)
+
+target_link_libraries(npuvt_platform_windows PUBLIC npuvt_project_options)
+target_include_directories(npuvt_platform_windows PUBLIC ${PROJECT_SOURCE_DIR}/include)
