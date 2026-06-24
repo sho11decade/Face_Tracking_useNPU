@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <filesystem>
+#include <utility>
 
 namespace npuvt::inference {
 
@@ -20,9 +22,18 @@ InferenceOptions InferenceService::options() const {
 }
 
 std::string InferenceService::select_device(const std::vector<std::string>& available_devices) const {
-    static constexpr std::array preferred_order {"NPU", "GPU", "CPU"};
+    if (!options_.device_hint.empty()) {
+        const auto it = std::find(available_devices.begin(), available_devices.end(), options_.device_hint);
+        if (it != available_devices.end()) {
+            return *it;
+        }
+    }
 
-    for (const auto* preferred : preferred_order) {
+    const auto& preferred_order = options_.preferred_devices.empty()
+                                      ? std::vector<std::string> {"NPU", "GPU", "CPU"}
+                                      : options_.preferred_devices;
+
+    for (const auto& preferred : preferred_order) {
         const auto it = std::find(available_devices.begin(), available_devices.end(), preferred);
         if (it != available_devices.end()) {
             return *it;
@@ -30,6 +41,48 @@ std::string InferenceService::select_device(const std::vector<std::string>& avai
     }
 
     return available_devices.empty() ? "UNAVAILABLE" : available_devices.front();
+}
+
+const npuvt::models::ModelCatalog& InferenceService::model_catalog() const noexcept {
+    return model_catalog_;
+}
+
+npuvt::models::ModelResolver InferenceService::model_resolver() const {
+    npuvt::models::ModelResolver resolver;
+    resolver.set_options({.models_root = options_.models_root});
+    return resolver;
+}
+
+std::optional<npuvt::models::ResolvedModel> InferenceService::resolve_model(npuvt::models::ModelRole role) const {
+    const auto* definition = model_catalog_.find(role);
+    if (definition == nullptr) {
+        return std::nullopt;
+    }
+
+    const auto resolver = model_resolver();
+    const auto resolved = resolver.resolve(*definition);
+    return resolved;
+}
+
+ModelLoadSummary InferenceService::load_model_summary() const {
+    ModelLoadSummary summary {};
+
+    if (const auto face = resolve_model(npuvt::models::ModelRole::face_detection); face.has_value()) {
+        summary.face_detection = *face;
+        summary.face_detection_ready = face->xml_exists || face->onnx_exists;
+    }
+
+    if (const auto landmarks = resolve_model(npuvt::models::ModelRole::facial_landmarks); landmarks.has_value()) {
+        summary.facial_landmarks = *landmarks;
+        summary.facial_landmarks_ready = landmarks->xml_exists || landmarks->onnx_exists;
+    }
+
+    if (const auto head_pose = resolve_model(npuvt::models::ModelRole::head_pose); head_pose.has_value()) {
+        summary.head_pose = *head_pose;
+        summary.head_pose_ready = head_pose->xml_exists || head_pose->onnx_exists;
+    }
+
+    return summary;
 }
 
 npuvt::core::FaceObservation InferenceService::analyze(const npuvt::core::FramePacket& frame) const {

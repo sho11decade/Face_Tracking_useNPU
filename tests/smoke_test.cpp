@@ -5,6 +5,8 @@
 #include "npu_vtube/filter/one_euro_filter.hpp"
 #include "npu_vtube/inference/inference_service.hpp"
 #include "npu_vtube/mapping/parameter_mapper.hpp"
+#include "npu_vtube/models/model_catalog.hpp"
+#include "npu_vtube/models/model_resolver.hpp"
 #include "npu_vtube/tracking/tracking_service.hpp"
 
 int main() {
@@ -19,12 +21,25 @@ int main() {
     npuvt::tracking::TrackingService tracking_service;
     npuvt::mapping::ParameterMapper parameter_mapper;
 
+    npuvt::models::ModelCatalog catalog;
+    const auto* face_model = catalog.find(npuvt::models::ModelRole::face_detection);
+    assert(face_model != nullptr);
+    npuvt::models::ModelResolver resolver({.models_root = "models"});
+    const auto resolved_models = resolver.resolve_defaults(catalog);
+    assert(!resolved_models.empty());
+
     const auto device = inference_service.select_device(std::vector<std::string> {"CPU", "GPU"});
     assert(device == "GPU");
 
     const auto frame = capture_service.make_placeholder_frame();
     const auto observation_from_frame = inference_service.analyze(frame);
     assert(observation_from_frame.frame_width == frame.width);
+
+    const auto resolved_face = inference_service.resolve_model(npuvt::models::ModelRole::face_detection);
+    assert(resolved_face.has_value());
+
+    const auto summary = inference_service.load_model_summary();
+    assert(summary.face_detection.definition.model_id == "face-detection-0200");
 
     const auto observation = inference_service.make_placeholder_observation();
     const auto tracking_state = tracking_service.update(observation);

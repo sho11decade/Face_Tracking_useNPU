@@ -6,6 +6,7 @@ target_link_libraries(
         npuvt_project_options
         npuvt::capture
         npuvt::inference
+        npuvt::models
         npuvt::tracking
         npuvt::mapping
 )

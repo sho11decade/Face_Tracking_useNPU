@@ -8,6 +8,7 @@ target_link_libraries(
         npuvt::core
         npuvt::capture
         npuvt::inference
+        npuvt::models
         npuvt::tracking
         npuvt::mapping
         npuvt::render_dx11

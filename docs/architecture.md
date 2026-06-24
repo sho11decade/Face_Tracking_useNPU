@@ -10,11 +10,12 @@
 ApplicationInfo
   -> CaptureService.list_devices()
   -> InferenceService.select_device()
+  -> InferenceService.load_model_summary()
   -> InferenceService.make_placeholder_observation()
   -> TrackingService.update()
   -> ParameterMapper.map()
-  -> RenderBackend.name()
-  -> DebugUi.name()
+  -> RenderBackend.submit()
+  -> DebugUi.submit()
   -> optional: CaptureService.initialize() + grab_frame()
 ```
 
@@ -32,11 +33,12 @@ Camera -> Capture -> Inference -> Tracking/Filter -> Mapping -> Render -> UI
 | --- | --- | --- |
 | `core` | 共通型、アプリ情報 | 実装済み |
 | `capture` | カメラ列挙、初期化、フレーム取得 | 実装済み |
-| `inference` | 推論デバイス選択、顔観測生成 | プレースホルダ |
+| `inference` | デバイス選択、モデル解決、顔観測生成 | 最小実装 |
+| `models` | 推奨モデル定義、解決ロジック | 実装済み |
 | `tracking` | 観測値から追跡状態を生成 | 最小実装 |
 | `mapping` | 追跡状態を VTuber 向け値へ変換 | 最小実装 |
-| `render/dx11` | プレビューとオーバーレイ描画 | スタブ |
-| `ui/imgui` | デバッグ UI | スタブ |
+| `render/dx11` | 状態保持と将来の描画入口 | 最小実装 |
+| `ui/imgui` | 状態保持と将来の UI 入口 | 最小実装 |
 | `platform/windows` | Windows 環境依存の判定 | 最小実装 |
 
 ## 主要データ型
@@ -77,13 +79,22 @@ apps/tracker_dev
 
 `inference`:
 
-- 実モデル読み込みはまだ無い
-- NPU 優先のデバイス選択ロジックだけ先に存在
+- `models/` 配下の推奨モデル定義を解決
+- `load_model_summary()` で 3 系統のモデル利用可能性をまとめて確認
+- OpenVINO の `compile_model()` はまだ未接続
+
+`models`:
+
+- `face-detection-0200`
+- `landmarks-regression-retail-0009`
+- `head-pose-estimation-adas-0001`
+- `facial-landmarks-35-adas-0002`
+- `models/` 配下の `xml/bin/onnx` を解決
 
 `tracking` / `mapping`:
 
-- 顔矩形中心とスケール計算のみ
-- 正規化、外れ値除去、平滑化は未実装
+- `tracking` は OneEuro Filter を保持し、中心/スケール/姿勢を平滑化
+- `mapping` は画面中心を基準に正規化する
 
 ## 現時点で未接続の設計要素
 
@@ -91,7 +102,6 @@ apps/tracker_dev
 
 - OpenVINO 実推論
 - `NPU/GPU/CPU` の実コンパイルとフォールバック
-- OneEuro Filter
 - 有界キューによる最新優先パイプライン
 - DirectX11 テクスチャ更新とオーバーレイ描画
 - Dear ImGui によるデバッグパネル

@@ -1,6 +1,7 @@
 add_subdirectory(core)
 add_subdirectory(filter)
 add_subdirectory(capture)
+add_subdirectory(models)
 add_subdirectory(inference)
 add_subdirectory(tracking)
 add_subdirectory(mapping)
