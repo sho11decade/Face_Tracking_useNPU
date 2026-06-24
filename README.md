@@ -111,5 +111,6 @@ ctest --test-dir build --output-on-failure
 - `docs/architecture.md`: モジュール境界とデータフロー
 - `docs/build.md`: 現在のビルド手順と CMake オプション
 - `docs/capture.md`: Media Foundation キャプチャ実装の現状
+- `docs/models.md`: 顔検出・ランドマーク・頭部姿勢の推奨モデル
 - `docs/roadmap.md`: 近接タスクと中長期目標
 - `TECHNICAL_DETAILS.md`: 設計詳細と将来像

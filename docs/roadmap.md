@@ -28,6 +28,7 @@
 3. `InferenceService` に実モデル読み込みの最小経路を追加する
 4. `TrackingService` に平滑化や欠損時処理の土台を入れる
 5. `tracker_dev` でフレーム更新ループと基本ログを持たせる
+6. `docs/models.md` で選定したモデルを実装に接続する
 
 近接タスクの完了条件:
 
