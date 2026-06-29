@@ -16,6 +16,7 @@
 - ルートの `vcpkg.json` には `fmt`、`imgui`、`nlohmann-json`、`opencv`、`openvino`、`tbb` を宣言しています。
 - ただし現在の既定ビルドでは `NPUVT_ENABLE_OPENVINO=OFF`、`NPUVT_ENABLE_OPENCV=OFF`、`NPUVT_ENABLE_IMGUI=OFF`、`NPUVT_ENABLE_TBB=OFF` のため、これらをまだ実リンクしていません。
 - そのため、現状は「vcpkg マニフェストは用意済みだが、既定構成は軽量」という段階です。
+- OpenVINO の推論コード自体は実装済みで、`NPUVT_ENABLE_OPENVINO=ON` のときに `find_package(OpenVINO REQUIRED COMPONENTS Runtime)` を通して有効化されます。
 
 ## このワークスペースで確認したコマンド
 
@@ -65,6 +66,18 @@ cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT
 | `NPUVT_ENABLE_TBB` | `OFF` | oneTBB 利用を有効化予定 |
 
 既定値のままでも、現在のスケルトンと Media Foundation キャプチャはビルドできます。
+
+OpenVINO 実行を有効にする例:
+
+```powershell
+cmake -S . -B build-openvino -DNPUVT_ENABLE_OPENVINO=ON -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake"
+cmake --build build-openvino --config Debug
+```
+
+注意:
+
+- この環境では OpenVINO パッケージ自体は未導入でした。
+- そのため、`ON` 構成の実ビルドはまだ未確認です。
 
 ## テスト
 

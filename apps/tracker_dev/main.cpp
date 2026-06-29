@@ -21,12 +21,19 @@ int main() {
     npuvt::render::RenderBackend render_backend;
     npuvt::ui::DebugUi debug_ui;
 
-    std::vector<std::string> available_devices {"CPU"};
-    if (npuvt::platform::windows::is_npu_driver_expected()) {
-        available_devices.insert(available_devices.begin(), "NPU");
+    const auto model_summary = inference_service.load_model_summary();
+    auto available_devices = inference_service.query_available_devices();
+    if (available_devices.empty()) {
+        available_devices = {"CPU"};
+        if (npuvt::platform::windows::is_npu_driver_expected()) {
+            available_devices.insert(available_devices.begin(), "NPU");
+        }
     }
 
     const auto device = inference_service.select_device(available_devices);
+    std::string runtime_error;
+    const auto runtime_initialized = inference_service.initialize_runtime(&runtime_error);
+    const auto runtime_status = inference_service.runtime_status();
     const auto placeholder_observation = inference_service.make_placeholder_observation();
     const auto tracking_state = tracking_service.update(placeholder_observation);
     const auto mapped = parameter_mapper.map(tracking_state);
@@ -39,6 +46,12 @@ int main() {
         std::cout << "  [" << i << "] " << capture_devices[i].name << '\n';
     }
     std::cout << "Inference device: " << device << '\n';
+    std::cout << "OpenVINO compiled in: " << (runtime_status.openvino_compiled ? "yes" : "no") << '\n';
+    std::cout << "OpenVINO runtime ready: " << (runtime_initialized ? "yes" : "no") << '\n';
+    if (!runtime_initialized && !runtime_error.empty()) {
+        std::cout << "OpenVINO init error: " << runtime_error << '\n';
+    }
+    std::cout << "Face detector ready: " << (model_summary.face_detection_ready ? "yes" : "no") << '\n';
     std::cout << "Render backend: " << render_backend.name() << '\n';
     std::cout << "UI backend: " << debug_ui.name() << '\n';
     std::cout << "Mapped yaw/pitch/roll: " << mapped.angle_yaw << ", " << mapped.angle_pitch << ", "

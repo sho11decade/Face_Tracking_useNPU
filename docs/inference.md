@@ -9,7 +9,7 @@
 - モデルファイル解決
 - フレームからの顔観測値生成
 
-まだ `Core::compile_model()` や `InferRequest` を使った本実装は入っていません。現状は「モデルを見つけて、推論パイプラインに渡せる形へ整える」段階です。
+`NPUVT_ENABLE_OPENVINO=ON` の場合は、`Core::read_model()`、`compile_model()`、`InferRequest` を使った顔検出の実行経路が有効になります。既定ビルドでは `OFF` のため、簡易推定へフォールバックします。
 
 ## 公開 API
 
@@ -35,12 +35,15 @@ struct ModelLoadSummary {
 
 class InferenceService {
 public:
+    std::vector<std::string> query_available_devices();
+    bool initialize_runtime(std::string* error_message = nullptr);
+    InferenceRuntimeStatus runtime_status() const;
     std::string select_device(const std::vector<std::string>& available_devices) const;
     const npuvt::models::ModelCatalog& model_catalog() const noexcept;
     npuvt::models::ModelResolver model_resolver() const;
     std::optional<npuvt::models::ResolvedModel> resolve_model(npuvt::models::ModelRole role) const;
     ModelLoadSummary load_model_summary() const;
-    npuvt::core::FaceObservation analyze(const npuvt::core::FramePacket& frame) const;
+    npuvt::core::FaceObservation analyze(const npuvt::core::FramePacket& frame);
     npuvt::core::FaceObservation make_placeholder_observation() const;
 };
 ```
@@ -72,22 +75,31 @@ public:
 
 の 3 つをまとめて解決し、どれが利用可能かを返す。
 
+### `initialize_runtime()`
+
+- OpenVINO が有効なら `Core` を初期化
+- 利用可能デバイス一覧を取得
+- 顔検出モデルを読み込み、選択デバイスへ `compile_model()` する
+- 失敗時は `runtime_status().last_error` へ理由を残す
+
 ### `analyze()`
 
-- 現状はフレームサイズから簡易的な顔 bbox を作るプレースホルダ
-- 実 OpenVINO 推論は未実装
+- OpenVINO 有効かつ顔検出モデルがコンパイル済みなら実推論を行う
+- `bgra8` / `bgr8` / `rgb8` を NCHW へ前処理して入力テンソルを作る
+- OpenVINO 無効、モデル未配置、推論失敗時は簡易 bbox 推定へフォールバックする
 
 ## 現在の制限
 
-- OpenVINO の `compile_model()` はまだ未接続
-- `InferRequest`、`PrePostProcessor`、`AsyncInferQueue` は未使用
+- 既定ビルドでは OpenVINO が無効
+- この環境では OpenVINO パッケージ未導入のため `ON` 構成は未検証
+- `PrePostProcessor`、`AsyncInferQueue` は未使用
 - デバイスの実コンパイル結果に基づくフォールバックは未実装
-- 実モデルの入出力テンソル整形は未実装
+- 顔検出以外のランドマーク/頭部姿勢はまだ未接続
 
 ## 次の実装ステップ
 
 1. `face-detection-0200` を OpenVINO で読み込む
-2. `ResolvedModel` から実ファイルを選び、`compile_model()` に接続する
-3. 顔 bbox を実推論結果に置き換える
-4. `landmarks-regression-retail-0009` と `head-pose-estimation-adas-0001` を段階的に接続する
-5. 実デバイスの `NPU -> GPU -> CPU` フォールバックを実装する
+2. `landmarks-regression-retail-0009` と `head-pose-estimation-adas-0001` を段階的に接続する
+3. 実デバイスの `NPU -> GPU -> CPU` フォールバックを実装する
+4. `PrePostProcessor` や async 実行を導入する
+5. 実行統計を `PerfSnapshot` と UI に接続する
